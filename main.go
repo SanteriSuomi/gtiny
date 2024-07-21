@@ -10,10 +10,9 @@ import (
 )
 
 func main() {
-	hadError := false
-
 	args := os.Args
 	argsLen := len(args)
+	hadError := false
 	if argsLen > 2 {
 		fmt.Println("Usage: gtiny <source file> or gtiny for REPL mode")
 		os.Exit(69)
