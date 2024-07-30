@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SanteriSuomi/gtiny/src/error"
+	"github.com/SanteriSuomi/gtiny/src/report"
 	"github.com/SanteriSuomi/gtiny/src/scanner"
 )
 
@@ -23,7 +23,10 @@ func main() {
 			fmt.Println(err)
 			os.Exit(69)
 		}
-		scanner.RunSource(string(source), &error.PrintErrorReporter{})
+		tokens := scanner.RunSource(string(source), &report.PrintErrorReporter{})
+		for _, token := range tokens {
+			fmt.Println(token.Type)
+		}
 	} else {
 		fmt.Println("REPL mode")
 		reader := bufio.NewReader(os.Stdin)
@@ -33,8 +36,10 @@ func main() {
 				fmt.Println(err)
 				os.Exit(69)
 			}
-			scanner.RunPrompt(input, &error.PrintErrorReporter{})
-			hadError = false
+			scanner.RunPrompt(input, &report.PrintErrorReporter{OnError: func(line int, column int, length int, message string) {
+				hadError = true
+			}})
+			// If had error, don't execute code, but scan whole source.
 		}
 	}
 

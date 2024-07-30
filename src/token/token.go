@@ -14,7 +14,7 @@ const (
 )
 
 const (
-	// Single-character tokens
+	// Single-character tokens. These tokens
 	LEFT_PAREN  string = "("
 	RIGHT_PAREN string = ")"
 	LEFT_BRACE  string = "{"
@@ -24,12 +24,11 @@ const (
 	MINUS       string = "-"
 	PLUS        string = "+"
 	SEMICOLON   string = ";"
-	SLASH       string = "/"
 	STAR        string = "*"
 )
 
 const (
-	// One or two character tokens
+	// Single or double character tokens. Handled after single character tokens by the scanner
 	BANG          string = "!"
 	BANG_EQUAL    string = "!="
 	EQUAL         string = "="
@@ -38,13 +37,15 @@ const (
 	GREATER_EQUAL string = ">="
 	LESS          string = "<"
 	LESS_EQUAL    string = "<="
+	SLASH         string = "/"
 )
 
 const (
 	// Literals
-	IDENTIFIER string = "IDENTIFIER"
-	STRING     string = "STRING"
-	NUMBER     string = "NUMBER"
+	// IDENTIFIER string = "IDENTIFIER"
+	// STRING     string = "STRING"
+	// NUMBER     string = "NUMBER"
+	STRING string = "\""
 )
 
 const (
