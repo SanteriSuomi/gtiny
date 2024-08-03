@@ -7,18 +7,28 @@ import (
 )
 
 type Scanner struct {
-	src    string
-	line   int
-	start  int
-	curr   int
-	tokens []Token
-	rep    report.ErrorReporter
+	src      string
+	line     int
+	start    int
+	curr     int
+	tokens   []Token
+	keywords map[string]string
+	rep      report.ErrorReporter
 }
+
+const NEW_LINE = "\n"
+const CARRIAGE_RETURN = "\r"
+const TAB = "\t"
+const DOUBLE_QUOTE = "\""
+const WHITE_SPACE = " "
+const FRACTION = "."
+const EMPTY = ""
 
 func (s *Scanner) Run(input string, rep report.ErrorReporter) []Token {
 	s.src = input
 	s.rep = rep
 	s.tokens = []Token{}
+	s.keywords = CreateKeywordMap()
 	s.scanTokens()
 	s.addToken(EOF)
 	return s.tokens
@@ -37,9 +47,9 @@ func (s *Scanner) scanToken() {
 	char := s.advance()
 
 	switch char {
-	case " ", "\r", "\t":
+	case WHITE_SPACE, CARRIAGE_RETURN, TAB:
 		return
-	case "\n":
+	case NEW_LINE:
 		s.line++
 		return
 	// Single character tokens
@@ -66,29 +76,76 @@ func (s *Scanner) scanToken() {
 
 	// Single or double character tokes
 	case BANG:
-		addToken(IfElse(s.match(EQUAL), BANG_EQUAL, BANG))
+		addToken(IfValueElse(s.nextMatch(EQUAL), BANG_EQUAL, BANG))
 	case EQUAL:
-		addToken(IfElse(s.match(EQUAL), EQUAL_EQUAL, EQUAL))
+		addToken(IfValueElse(s.nextMatch(EQUAL), EQUAL_EQUAL, EQUAL))
 	case GREATER:
-		addToken(IfElse(s.match(EQUAL), GREATER_EQUAL, GREATER))
+		addToken(IfValueElse(s.nextMatch(EQUAL), GREATER_EQUAL, GREATER))
 	case LESS:
-		addToken(IfElse(s.match(EQUAL), LESS_EQUAL, LESS))
+		addToken(IfValueElse(s.nextMatch(EQUAL), LESS_EQUAL, LESS))
 	case SLASH:
 		// Skip comments
-		if s.match(SLASH) {
-			for !s.isAtEnd() && s.peek() != "\n" {
+		if s.nextMatch(SLASH) {
+			for !s.isAtEnd() && s.peekCurrent() != NEW_LINE {
 				s.advance()
 			}
 		} else {
 			addToken(SLASH)
 		}
-
-	// TODO: Literals
 	case STRING:
-		s.addTokenLiteral(STRING, "")
-
+		s.scanLiteral()
 	default:
-		s.rep.Error(s.line, s.curr, s.curr-s.start, "unexpected character: %s", char)
+		if IsDigit(char) {
+			s.scanNumber()
+		} else if IsLetter(char) {
+			s.scanIdentifier()
+		} else {
+			s.rep.Error(s.line, s.curr, s.curr-s.start, "unexpected character: %s", char)
+		}
+	}
+}
+
+func (s *Scanner) scanLiteral() {
+	for (s.peekCurrent() != DOUBLE_QUOTE) && !s.isAtEnd() {
+		if s.peekCurrent() == NEW_LINE {
+			s.line++
+		}
+		s.advance()
+	}
+
+	if s.isAtEnd() {
+		s.rep.Error(s.line, s.curr, s.curr-s.start, "unterminated string")
+	}
+	s.advance()
+
+	// Trim the surrounding quotes
+	literal := s.src[s.start+1 : s.curr-1]
+	s.addTokenLiteral(STRING, literal)
+}
+
+func (s *Scanner) scanNumber() {
+	for IsDigit(s.peekCurrent()) {
+		s.advance()
+	}
+	if s.peekCurrent() == FRACTION && IsDigit(s.peekNext()) {
+		s.advance()
+		for IsDigit(s.peekCurrent()) {
+			s.advance()
+		}
+	}
+	s.addTokenLiteral(NUMBER, s.src[s.start:s.curr])
+}
+
+func (s *Scanner) scanIdentifier() {
+	for IsAlphaNumeric(s.peekCurrent()) {
+		s.advance()
+	}
+	literal := s.src[s.start:s.curr]
+	keyword := s.keywords[literal]
+	if keyword != EMPTY {
+		s.addToken(keyword)
+	} else {
+		s.addTokenLiteral(IDENTIFIER, literal)
 	}
 }
 
@@ -98,11 +155,21 @@ func (s *Scanner) advance() string {
 	return char
 }
 
-func (s *Scanner) peek() string {
+func (s *Scanner) peekCurrent() string {
+	if s.isAtEnd() {
+		return EOF
+	}
 	return string(s.src[s.curr])
 }
 
-func (s *Scanner) match(expected string) bool {
+func (s *Scanner) peekNext() string {
+	if s.nextIsAtEnd() {
+		return EOF
+	}
+	return string(s.src[s.curr+1])
+}
+
+func (s *Scanner) nextMatch(expected string) bool {
 	if s.curr >= len(s.src) {
 		return false
 	}
@@ -115,6 +182,10 @@ func (s *Scanner) match(expected string) bool {
 
 func (s *Scanner) isAtEnd() bool {
 	return s.curr >= len(s.src)
+}
+
+func (s *Scanner) nextIsAtEnd() bool {
+	return s.curr+1 >= len(s.src)
 }
 
 func (s *Scanner) addToken(tokenType string) {

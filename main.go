@@ -11,12 +11,11 @@ import (
 
 func main() {
 	args := os.Args
-	argsLen := len(args)
 	hadError := false
-	if argsLen > 2 {
+	if len(args) > 2 {
 		fmt.Println("Usage: gtiny <source file> or gtiny for REPL mode")
 		os.Exit(69)
-	} else if argsLen == 2 {
+	} else if len(args) == 2 {
 		fmt.Println("Source mode")
 		source, err := os.ReadFile(args[1])
 		if err != nil {
@@ -25,7 +24,7 @@ func main() {
 		}
 		tokens := scanner.RunSource(string(source), &report.PrintErrorReporter{})
 		for _, token := range tokens {
-			fmt.Println(token.Type)
+			fmt.Printf("Type: %s, Lexeme: %s, Literal: %s\n", token.Type, token.Lexeme, token.Literal)
 		}
 	} else {
 		fmt.Println("REPL mode")
