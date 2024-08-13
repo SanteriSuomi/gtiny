@@ -1,20 +1,20 @@
 package token
 
 type Token struct {
-	Type    string
-	Lexeme  string
-	Literal string
-	Line    int
-	Column  int
-	Length  int
+	Type   string
+	Value  string
+	Line   int
+	Column int
+	Length int
 }
 
+// Special tokens
 const (
 	EOF = "EOF"
 )
 
+// Single-character tokens
 const (
-	// Single-character tokens. These tokens
 	LEFT_PAREN  = "("
 	RIGHT_PAREN = ")"
 	LEFT_BRACE  = "{"
@@ -27,8 +27,8 @@ const (
 	STAR        = "*"
 )
 
+// Single or double character tokens
 const (
-	// Single or double character tokens. Handled after single character tokens by the scanner
 	BANG          = "!"
 	GREATER       = ">"
 	LESS          = "<"
@@ -40,19 +40,14 @@ const (
 	LESS_EQUAL    = "<="
 )
 
+// Literals
 const (
-	// Literals
 	STRING = "\""
 	NUMBER = "NUMBER"
 )
 
+// Keywords
 const (
-	// Identifiers
-	IDENTIFIER = "IDENTIFIER"
-)
-
-const (
-	// Keywords
 	AND    = "and"
 	CLASS  = "class"
 	ELSE   = "else"
@@ -71,6 +66,11 @@ const (
 	WHILE  = "while"
 )
 
+// CreateKeywordMap returns a map of keywords in the programming language.
+// Essentially a set to quickly check if a keyword exists.
+//
+// Parameters: None
+// Returns: A map of strings where the keys and values are the same keywords.
 func CreateKeywordMap() map[string]string {
 	return map[string]string{
 		AND:    AND,

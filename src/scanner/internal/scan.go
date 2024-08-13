@@ -24,18 +24,33 @@ const WHITE_SPACE = " "
 const FRACTION = "."
 const EMPTY = ""
 
-func (s *Scanner) Run(input string, rep report.ErrorReporter) []Token {
-	s.src = input
-	s.rep = rep
-	s.tokens = []Token{}
-	s.keywords = CreateKeywordMap()
+func RunSource(source string, rep report.ErrorReporter) []Token {
+	scanner := Scanner{src: source, line: 0, start: 0, curr: 0, tokens: []Token{}, keywords: CreateKeywordMap(), rep: rep}
+	return scanner.RunSource(source)
+}
+
+func (s *Scanner) RunSource(source string) []Token {
 	s.scanTokens()
 	s.addToken(EOF)
 	return s.tokens
 }
 
+func ConstructPromptScanner(rep report.ErrorReporter) Scanner {
+	return Scanner{src: "", line: 0, start: 0, curr: 0, tokens: []Token{}, keywords: CreateKeywordMap(), rep: rep}
+}
+
+func (s *Scanner) RunPrompt(prompt string) {
+	s.src = s.src + prompt
+	s.scanTokens()
+}
+
+// Result returns all the tokens scanned by prompting. The scanner should not be used after this.
+func (s *Scanner) PromptingResult() []Token {
+	s.addToken(EOF)
+	return s.tokens
+}
+
 func (s *Scanner) scanTokens() {
-	s.start, s.curr, s.line = 0, 0, 0
 	for !s.isAtEnd() {
 		s.scanToken()
 		s.start = s.curr
@@ -84,8 +99,15 @@ func (s *Scanner) scanToken() {
 	case LESS:
 		addToken(IfValueElse(s.nextMatch(EQUAL), LESS_EQUAL, LESS))
 	case SLASH:
-		// Skip comments
-		if s.nextMatch(SLASH) {
+		if s.nextMatch(STAR) { // Block comments
+			for !s.isAtEnd() && !(s.peekCurrent() == STAR && s.nextMatch(SLASH)) {
+				if s.peekCurrent() == STAR && s.nextMatch(SLASH) {
+					s.reportCurrent("unterminated block comment")
+					break
+				}
+				s.advance()
+			}
+		} else if s.nextMatch(SLASH) { // Line comments
 			for !s.isAtEnd() && s.peekCurrent() != NEW_LINE {
 				s.advance()
 			}
@@ -100,7 +122,7 @@ func (s *Scanner) scanToken() {
 		} else if IsLetter(char) {
 			s.scanIdentifier()
 		} else {
-			s.rep.Error(s.line, s.curr, s.curr-s.start, "unexpected character: %s", char)
+			s.reportCurrent("unexpected character: %s", char)
 		}
 	}
 }
@@ -114,11 +136,10 @@ func (s *Scanner) scanLiteral() {
 	}
 
 	if s.isAtEnd() {
-		s.rep.Error(s.line, s.curr, s.curr-s.start, "unterminated string")
+		s.reportCurrent("unterminated string")
 	}
 	s.advance()
 
-	// Trim the surrounding quotes
 	literal := s.src[s.start+1 : s.curr-1]
 	s.addTokenLiteral(STRING, literal)
 }
@@ -145,7 +166,10 @@ func (s *Scanner) scanIdentifier() {
 	if keyword != EMPTY {
 		s.addToken(keyword)
 	} else {
-		s.addTokenLiteral(IDENTIFIER, literal)
+		foundKeyword := s.keywords[literal]
+		if foundKeyword != EMPTY {
+			s.addToken(foundKeyword)
+		}
 	}
 }
 
@@ -193,7 +217,10 @@ func (s *Scanner) addToken(tokenType string) {
 }
 
 func (s *Scanner) addTokenLiteral(tokenType string, literal string) {
-	lexeme := s.src[s.start:s.curr]
 	length := s.curr - s.start
-	s.tokens = append(s.tokens, Token{Type: tokenType, Lexeme: lexeme, Literal: literal, Line: s.line, Column: s.start, Length: length})
+	s.tokens = append(s.tokens, Token{Type: tokenType, Value: literal, Line: s.line, Column: s.start, Length: length})
+}
+
+func (s *Scanner) reportCurrent(errorMsg string, a ...any) {
+	s.rep.Error(s.line, s.curr, s.curr-s.start, errorMsg, a)
 }
