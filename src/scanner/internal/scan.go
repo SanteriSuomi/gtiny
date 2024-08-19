@@ -99,31 +99,41 @@ func (s *Scanner) scanToken() {
 	case LESS:
 		addToken(IfValueElse(s.nextMatch(EQUAL), LESS_EQUAL, LESS))
 	case SLASH:
-		if s.nextMatch(STAR) { // Block comments
-			for !s.isAtEnd() && !(s.peekCurrent() == STAR && s.nextMatch(SLASH)) {
-				if s.peekCurrent() == STAR && s.nextMatch(SLASH) {
-					s.reportCurrent("unterminated block comment")
-					break
-				}
-				s.advance()
-			}
-		} else if s.nextMatch(SLASH) { // Line comments
-			for !s.isAtEnd() && s.peekCurrent() != NEW_LINE {
-				s.advance()
-			}
-		} else {
-			addToken(SLASH)
-		}
+		s.handleSlash()
 	case STRING:
 		s.scanLiteral()
 	default:
-		if IsDigit(char) {
-			s.scanNumber()
-		} else if IsLetter(char) {
-			s.scanIdentifier()
-		} else {
-			s.reportCurrent("unexpected character: %s", char)
+		s.handleRest(char)
+	}
+}
+
+func (s *Scanner) handleSlash() {
+	// Block comments
+	if s.nextMatch(STAR) {
+		for !s.isAtEnd() && !(s.peekCurrent() == STAR && s.nextMatch(SLASH)) {
+			if s.peekCurrent() == STAR && s.nextMatch(SLASH) {
+				s.reportCurrent("unterminated block comment")
+				break
+			}
+			s.advance()
 		}
+		// Line comments
+	} else if s.nextMatch(SLASH) {
+		for !s.isAtEnd() && s.peekCurrent() != NEW_LINE {
+			s.advance()
+		}
+	} else {
+		s.addToken(SLASH)
+	}
+}
+
+func (s *Scanner) handleRest(char string) {
+	if IsDigit(char) {
+		s.scanNumber()
+	} else if IsLetter(char) {
+		s.scanIdentifier()
+	} else {
+		s.reportCurrent("unexpected character: %s", char)
 	}
 }
 
