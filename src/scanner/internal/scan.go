@@ -1,8 +1,8 @@
 package internal
 
 import (
+	. "github.com/SanteriSuomi/gtiny/src/entities"
 	"github.com/SanteriSuomi/gtiny/src/report"
-	. "github.com/SanteriSuomi/gtiny/src/token"
 	. "github.com/SanteriSuomi/gtiny/src/utils"
 )
 
@@ -24,6 +24,7 @@ const WHITE_SPACE = " "
 const FRACTION = "."
 const EMPTY = ""
 
+// RunSource creates a scanner for the given source, runs it, and returns all the tokens it found.
 func RunSource(source string, rep report.ErrorReporter) []Token {
 	scanner := Scanner{src: source, line: 0, start: 0, curr: 0, tokens: []Token{}, keywords: CreateKeywordMap(), rep: rep}
 	return scanner.RunSource(source)

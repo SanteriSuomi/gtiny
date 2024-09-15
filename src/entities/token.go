@@ -1,4 +1,4 @@
-package token
+package entities
 
 type Token struct {
 	Type   string

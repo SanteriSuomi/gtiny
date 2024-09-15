@@ -3,7 +3,7 @@ package utils
 import (
 	"unicode"
 
-	"github.com/SanteriSuomi/gtiny/src/token"
+	"github.com/SanteriSuomi/gtiny/src/entities"
 )
 
 // IsDigit checks if the given string is a single digit. Only regular digits (0-9) are considered.
@@ -43,5 +43,5 @@ func IsLetter(str string) bool {
 // - str: The string to be checked.
 // Return type: bool
 func IsAlphaNumeric(str string) bool {
-	return str != token.EOF && IsLetter(str) || IsDigit(str)
+	return str != entities.EOF && IsLetter(str) || IsDigit(str)
 }

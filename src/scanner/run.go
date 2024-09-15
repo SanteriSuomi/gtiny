@@ -1,12 +1,12 @@
 package scanner
 
 import (
+	"github.com/SanteriSuomi/gtiny/src/entities"
 	"github.com/SanteriSuomi/gtiny/src/report"
 	"github.com/SanteriSuomi/gtiny/src/scanner/internal"
-	"github.com/SanteriSuomi/gtiny/src/token"
 )
 
-func RunSource(input string, rep report.ErrorReporter) []token.Token {
+func RunSource(input string, rep report.ErrorReporter) []entities.Token {
 	return internal.RunSource(input, rep)
 }
 
@@ -24,6 +24,6 @@ func (r *PromptRunner) RunPrompt(input string) {
 	r.scanner.RunPrompt(input)
 }
 
-func (r *PromptRunner) EndPrompting() []token.Token {
+func (r *PromptRunner) EndPrompting() []entities.Token {
 	return r.scanner.PromptingResult()
 }
